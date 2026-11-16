@@ -38,6 +38,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 #include <QtCore/QJsonDocument>
 #include <QtCore/QJsonObject>
+#include <QtCore/QJsonArray>
 #include <QtCore/QFileSystemWatcher>
 
 #include <ksandbox.h>
@@ -732,13 +733,21 @@ HttpChecker::HttpChecker(bool testing) : Checker(testing) {
 }
 
 void HttpChecker::start() {
+#ifdef Q_OS_WIN
+	const auto path = u"https://api.github.com/repos/DVoidbreaker/QxGram/releases/latest"_q;
+#else // Q_OS_WIN
 	const auto updaterVersion = Platform::AutoUpdateVersion();
 	const auto path = Local::readAutoupdatePrefix()
 		+ qstr("/current")
 		+ (updaterVersion > 1 ? QString::number(updaterVersion) : QString());
+#endif // Q_OS_WIN
 	auto url = QUrl(path);
 	DEBUG_LOG(("Update Info: requesting update state"));
 	auto request = QNetworkRequest(url);
+#ifdef Q_OS_WIN
+	request.setRawHeader("User-Agent", "QxGram-Desktop");
+	request.setRawHeader("Accept", "application/vnd.github+json");
+#endif // Q_OS_WIN
 	// Qt's HTTP/2 backend does not apply the read-buffer limit.
 	request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
 	_manager = std::make_unique<QNetworkAccessManager>();
@@ -787,12 +796,49 @@ bool HttpChecker::handleResponse(const QByteArray &response) {
 		done(url.isEmpty() ? nullptr : std::make_shared<HttpLoader>(url));
 		return true;
 	};
+#ifdef Q_OS_WIN
+	auto error = QJsonParseError();
+	const auto document = QJsonDocument::fromJson(response, &error);
+	if (error.error != QJsonParseError::NoError || !document.isObject()) {
+		return false;
+	}
+	const auto release = document.object();
+	if (release.value(u"draft"_q).toBool()
+		|| release.value(u"prerelease"_q).toBool()
+		|| !release.value(u"assets"_q).isArray()) {
+		return false;
+	}
+	const auto expression = QRegularExpression(
+		u"^td-update-win-x64-([0-9]+)$"_q);
+	for (const auto &value : release.value(u"assets"_q).toArray()) {
+		const auto asset = value.toObject();
+		const auto name = asset.value(u"name"_q).toString();
+		const auto match = expression.match(name);
+		if (!match.hasMatch()) {
+			continue;
+		}
+		const auto url = QUrl(asset.value(u"browser_download_url"_q).toString());
+		if (url.scheme() != u"https"_q
+			|| url.host() != u"github.com"_q
+			|| !url.path().startsWith(
+				u"/DVoidbreaker/QxGram/releases/download/"_q)
+			|| !url.path().endsWith(u"/"_q + name)) {
+			return false;
+		}
+		return handle(validateLatestUrl(
+			match.captured(1).toULongLong(),
+			false,
+			url.toString()));
+	}
+	return false;
+#else // Q_OS_WIN
 	if (const auto url = parseOldResponse(response)) {
 		return handle(*url);
 	} else if (const auto url = parseResponse(response)) {
 		return handle(*url);
 	}
 	return false;
+#endif // Q_OS_WIN
 }
 
 void HttpChecker::clearSentRequest() {
@@ -1765,11 +1811,15 @@ void Updater::start(bool forceWait) {
 				&_httpImplementation,
 				std::make_unique<HttpChecker>(_testing));
 		}
+#ifdef Q_OS_WIN
+		startImplementation(&_mtpImplementation, nullptr);
+#else // Q_OS_WIN
 		startImplementation(
 			&_mtpImplementation,
 			std::make_unique<MtpChecker>(
 				LookupCanaryPrivateSession(_session),
 				_testing));
+#endif // Q_OS_WIN
 
 		_checking.fire({});
 	} else {
