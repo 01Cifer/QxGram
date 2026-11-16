@@ -10,12 +10,15 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 // generated in-process with OpenSSL, so no fixture files and no network.
 
 #include "core/update_keys.h"
+#include "core/update_unpack.h"
 #include "core/update_verify.h"
 
 #include <QtCore/QJsonArray>
 #include <QtCore/QJsonDocument>
 #include <QtCore/QJsonObject>
 #include <QtCore/QFile>
+#include <QtCore/QFileInfo>
+#include <QtCore/QTemporaryDir>
 
 extern "C" {
 #include <openssl/bio.h>
@@ -947,8 +950,11 @@ int main(int argc, char *argv[]) {
 					kNow);
 			};
 			const auto windows = Target{ Os::Windows, Arch::X64 };
-			Check(verifyPackage(data, windows, MakeUpdateVersion(7004003, 0))
-				.has_value(), "QxGram package signature accepted");
+			const auto verified = verifyPackage(
+				data,
+				windows,
+				MakeUpdateVersion(7004003, 0));
+			Check(verified.has_value(), "QxGram package signature accepted");
 			Check(!verifyPackage(data, windows, MakeUpdateVersion(7004004, 0)),
 				"QxGram package at current version rejected");
 			Check(!verifyPackage(data, kTarget, MakeUpdateVersion(7004003, 0)),
@@ -957,6 +963,31 @@ int main(int argc, char *argv[]) {
 				data[data.size() - 1] = char(data.back() ^ 1);
 				Check(!verifyPackage(data, windows, MakeUpdateVersion(7004003, 0)),
 					"tampered QxGram package rejected");
+			}
+			if (verified && argc > 2) {
+				const auto path = QString::fromLocal8Bit(argv[2])
+					+ QStringLiteral("/qx-unpack-XXXXXX");
+				auto directory = QTemporaryDir(path);
+				Check(directory.isValid(), "isolated extraction directory");
+				auto error = QString();
+				const auto uncompressed = DecompressUpdatePayload(
+					*verified,
+					&error);
+				Check(uncompressed.has_value(), "QxGram package decompresses");
+				if (directory.isValid() && uncompressed) {
+					const auto extracted = ExtractUpdateFiles(
+						*uncompressed,
+						verified->envelope.version,
+						directory.path(),
+						&error);
+					Check(extracted, "QxGram package extracts");
+					Check(QFileInfo::exists(
+						directory.path() + QStringLiteral("/Telegram.exe")),
+						"extracted client exists");
+					Check(QFileInfo::exists(
+						directory.path() + QStringLiteral("/Updater.exe")),
+						"extracted updater exists");
+				}
 			}
 		}
 	}
