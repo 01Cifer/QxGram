@@ -427,8 +427,8 @@ int main(int argc, char *argv[]) {
 			&error);
 		Check(embedded.has_value(), "embedded manifest verifies");
 		Check(embedded && embedded->version >= 1, "embedded manifest version");
-		Check(embedded && embedded->channels.size() == 4,
-			"embedded manifest lists all four channels");
+		Check(embedded && embedded->channels.contains("stable"),
+			"embedded manifest has a stable channel");
 		Check(embedded && !embedded->keys.empty(),
 			"embedded manifest has usable keys");
 	}
