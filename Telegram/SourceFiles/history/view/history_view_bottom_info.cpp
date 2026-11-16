@@ -16,6 +16,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "ui/text/text_utilities.h"
 #include "ui/painter.h"
 #include "core/ui_integration.h"
+#include "history/history_qx_deleted.h"
 #include "lang/lang_keys.h"
 #include "history/history_item_components.h"
 #include "history/history_item_helpers.h"
@@ -549,6 +550,10 @@ void BottomInfo::layoutDateText() {
 		})).append("  ");
 	}
 	marked.append(full);
+	if (_data.flags & Data::Flag::QxDeleted) {
+		marked.append(u" "_q).append(
+			Ui::Text::IconEmoji(&st::qxDeletedIconEmoji));
+	}
 	_authorEditedDate.setMarkedText(
 		st::msgDateTextStyle,
 		marked,
@@ -670,6 +675,9 @@ BottomInfo::Data BottomInfoDataFromMessage(not_null<Message*> message) {
 	auto result = BottomInfo::Data();
 	result.date = message->dateTime();
 	result.effectId = item->effectId();
+	if (QxDeleted::Kept(item)) {
+		result.flags |= Flag::QxDeleted;
+	}
 	if (message->hasOutLayout()) {
 		result.flags |= Flag::OutLayout;
 	}

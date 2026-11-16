@@ -9,6 +9,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 #include "core/application.h"
 #include "core/core_settings.h"
+#include "history/history_qx_deleted.h"
 #include "lang/lang_instance.h"
 #include "lang/lang_keys.h"
 #include "main/main_session.h"
@@ -25,16 +26,20 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 namespace Settings {
 namespace {
 
+using namespace Builder;
+
 struct ToggleArgs {
 	std::string_view key;
 	rpl::producer<QString> title;
 	QString id;
 	QStringList keywords;
+	Fn<void(bool)> onToggleChange;
 };
 
 void AddToggle(SectionBuilder &builder, ToggleArgs &&args) {
 	const auto value = Core::App().settings().readPref<bool>(args.key, false);
 	const auto key = args.key;
+	const auto extra = args.onToggleChange;
 	const auto button = builder.addButton({
 		.id = args.id,
 		.title = std::move(args.title),
@@ -45,6 +50,9 @@ void AddToggle(SectionBuilder &builder, ToggleArgs &&args) {
 	) | rpl::on_next([=](bool toggled) {
 		Core::App().settings().writePref<bool>(key, toggled);
 		Core::App().saveSettingsDelayed();
+		if (extra) {
+			extra(toggled);
+		}
 	}, button->lifetime());
 }
 
@@ -61,6 +69,11 @@ void BuildFeatures(SectionBuilder &builder) {
 			u"🗑️ Deleted"_q),
 		.id = u"qxgram/show-deleted"_q,
 		.keywords = { u"deleted"_q, u"удалённые"_q, u"сообщения"_q },
+		.onToggleChange = [](bool on) {
+			if (!on) {
+				QxDeleted::ReleaseAll();
+			}
+		},
 	});
 
 	AddToggle(builder, {

@@ -18,6 +18,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "history/view/media/history_view_media_grouped.h"
 #include "history/history_item_components.h"
 #include "history/history_item_helpers.h"
+#include "history/history_qx_deleted.h"
 #include "history/history_unread_things.h"
 #include "history/history.h"
 #include "iv/iv_data.h"
@@ -1056,6 +1057,7 @@ HistoryItem::HistoryItem(
 }
 
 HistoryItem::~HistoryItem() {
+	QxDeleted::ItemDestroyed(this);
 	_media = nullptr;
 	clearSavedMedia();
 	if (const auto reply = Get<HistoryMessageReply>()) {

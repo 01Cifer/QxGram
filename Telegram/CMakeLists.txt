@@ -1265,6 +1265,8 @@ PRIVATE
     history/history_inner_widget_accessibility.h
     history/history_location_manager.cpp
     history/history_location_manager.h
+    history/history_qx_deleted.cpp
+    history/history_qx_deleted.h
     history/history_streamed_drafts.cpp
     history/history_streamed_drafts.h
     history/history_translation.cpp

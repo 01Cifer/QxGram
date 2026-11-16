@@ -12,6 +12,11 @@ using "ui/menu_icons.style";
 using "chat_helpers/chat_helpers.style"; // GroupCallUserpics
 
 msgMaxWidth: 430px;
+
+qxDeletedIconEmoji: IconEmoji {
+	icon: icon{{ "chat/qx_trash", attentionButtonFg }};
+	padding: margins(0px, 2px, 0px, 0px);
+}
 msgFont: font(fsize);
 msgNameFont: semiboldFont;
 msgNameStyle: semiboldTextStyle;

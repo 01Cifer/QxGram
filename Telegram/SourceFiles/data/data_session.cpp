@@ -33,6 +33,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "history/history.h"
 #include "history/history_item.h"
 #include "history/history_item_components.h"
+#include "history/history_qx_deleted.h"
 #include "history/history_streamed_drafts.h"
 #include "history/view/media/history_view_media.h"
 #include "history/view/history_view_element.h"
@@ -3388,8 +3389,10 @@ void Session::processMessagesDeleted(
 		}
 	}
 	if (!toDestroy.empty()) {
-		notifyItemsAboutToBeDestroyed(toDestroy);
-		for (const auto &item : toDestroy) {
+		const auto destroy = QxDeleted::FilterToDestroy(
+			std::move(toDestroy));
+		notifyItemsAboutToBeDestroyed(destroy);
+		for (const auto &item : destroy) {
 			item->destroy();
 		}
 	}
@@ -3412,8 +3415,10 @@ void Session::processNonChannelMessagesDeleted(const QVector<MTPint> &data) {
 		}
 	}
 	if (!toDestroy.empty()) {
-		notifyItemsAboutToBeDestroyed(toDestroy);
-		for (const auto &item : toDestroy) {
+		const auto destroy = QxDeleted::FilterToDestroy(
+			std::move(toDestroy));
+		notifyItemsAboutToBeDestroyed(destroy);
+		for (const auto &item : destroy) {
 			item->destroy();
 		}
 	}
