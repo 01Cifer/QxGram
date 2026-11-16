@@ -3053,7 +3053,8 @@ if (NOT DESKTOP_APP_DISABLE_AUTOUPDATE AND NOT build_macstore AND NOT build_wins
         )
     endif()
 
-    if (DESKTOP_APP_SPECIAL_TARGET)
+    option(QXGRAM_BUILD_PACKER "Build the QxGram v2 update packer" OFF)
+    if (DESKTOP_APP_SPECIAL_TARGET OR QXGRAM_BUILD_PACKER)
         add_executable(Packer)
         init_target(Packer)
 
@@ -3079,6 +3080,9 @@ if (NOT DESKTOP_APP_DISABLE_AUTOUPDATE AND NOT build_macstore AND NOT build_wins
 
         if (DESKTOP_APP_USE_PACKAGED)
             target_compile_definitions(Packer PRIVATE PACKER_USE_PACKAGED)
+        endif()
+        if (QXGRAM_BUILD_PACKER)
+            target_compile_definitions(Packer PRIVATE PACKER_DISABLE_PRIVATE)
         endif()
 
         if (WIN32 AND DESKTOP_APP_WIN7_BASELINE)
