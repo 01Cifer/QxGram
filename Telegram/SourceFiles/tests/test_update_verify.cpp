@@ -15,6 +15,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include <QtCore/QJsonArray>
 #include <QtCore/QJsonDocument>
 #include <QtCore/QJsonObject>
+#include <QtCore/QFile>
 
 extern "C" {
 #include <openssl/bio.h>
@@ -922,6 +923,43 @@ int main(int argc, char *argv[]) {
 			"beta with greater base accepted on canary-public");
 	}
 
+	if (argc > 1) {
+		auto file = QFile(QString::fromLocal8Bit(argv[1]));
+		const auto opened = file.open(QIODevice::ReadOnly);
+		Check(opened, "QxGram test package opens");
+		if (opened) {
+			auto data = file.readAll();
+			const auto embedded = ParseVerifiedManifest(
+				EmbeddedManifest(),
+				EmbeddedManifestSignature(),
+				RootPublicKeyPem());
+			const auto verifyPackage = [&](const QByteArray &bytes,
+					Target target,
+					quint64 running) {
+				return VerifyUpdate(
+					bytes,
+					Channel::Stable,
+					false,
+					target,
+					running,
+					embedded,
+					RootPublicKeyPem(),
+					kNow);
+			};
+			const auto windows = Target{ Os::Windows, Arch::X64 };
+			Check(verifyPackage(data, windows, MakeUpdateVersion(7004003, 0))
+				.has_value(), "QxGram package signature accepted");
+			Check(!verifyPackage(data, windows, MakeUpdateVersion(7004004, 0)),
+				"QxGram package at current version rejected");
+			Check(!verifyPackage(data, kTarget, MakeUpdateVersion(7004003, 0)),
+				"QxGram package for wrong platform rejected");
+			if (!data.isEmpty()) {
+				data[data.size() - 1] = char(data.back() ^ 1);
+				Check(!verifyPackage(data, windows, MakeUpdateVersion(7004003, 0)),
+					"tampered QxGram package rejected");
+			}
+		}
+	}
 	std::cout << (TotalChecks - FailedChecks) << "/" << TotalChecks
 		<< " checks passed." << std::endl;
 	return FailedChecks ? 1 : 0;
