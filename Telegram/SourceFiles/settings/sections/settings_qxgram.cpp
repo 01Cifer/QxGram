@@ -9,6 +9,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 #include "core/application.h"
 #include "core/core_settings.h"
+#include "core/core_screenshot_protection.h"
 #include "history/history_qx_deleted.h"
 #include "lang/lang_instance.h"
 #include "lang/lang_keys.h"
