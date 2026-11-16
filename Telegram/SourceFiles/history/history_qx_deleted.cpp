@@ -79,3 +79,13 @@ bool Enabled() {
 }
 
 } // namespace QxTtl
+
+namespace QxGhost {
+
+bool Enabled() {
+	return Core::App().settings().readPref<bool>(
+		Core::kQxGhostModeKey,
+		false);
+}
+
+} // namespace QxGhost

@@ -9,6 +9,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 #include "main/main_session.h"
 #include "history/history.h"
+#include "history/history_qx_deleted.h"
 #include "data/data_peer.h"
 #include "data/data_user.h"
 #include "base/unixtime.h"
@@ -109,6 +110,9 @@ bool SendProgressManager::updated(const Key &key, bool doing) {
 }
 
 void SendProgressManager::send(const Key &key, int progress) {
+	if (QxGhost::Enabled()) {
+		return;
+	}
 	if (skipRequest(key)) {
 		return;
 	}

@@ -61,8 +61,10 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "apiwrap.h"
 #include "chat_helpers/message_field.h"
 #include "core/application.h"
+#include "core/core_settings.h"
 #include "core/update_checker.h"
 #include "core/shortcuts.h"
+#include "history/history_qx_deleted.h"
 #include "window/window_columns.h"
 #include "window/window_controller.h"
 #include "window/window_session_controller.h"
@@ -237,6 +239,7 @@ Widget::Widget(
 	_searchControls,
 	object_ptr<Ui::IconButton>(this, st::dialogsCalendar))
 , _cancelSearch(_searchControls, st::dialogsCancelSearch)
+, _qxGhost(_searchControls, st::dialogsQxGhost)
 , _lockUnlock(
 	_searchControls,
 	object_ptr<Ui::IconButton>(this, st::dialogsLock))
@@ -286,6 +289,24 @@ Widget::Widget(
 	}, _innerList->lifetime());
 	_scrollToTop->raise();
 	_lockUnlock->toggle(false, anim::type::instant);
+
+	const auto refreshGhostIcon = [=] {
+		if (QxGhost::Enabled()) {
+			_qxGhost->setIconOverride(
+				&st::qxGhostIconOn,
+				&st::qxGhostIconOnOver);
+		} else {
+			_qxGhost->setIconOverride(nullptr);
+		}
+	};
+	refreshGhostIcon();
+	_qxGhost->setClickedCallback([=] {
+		Core::App().settings().writePref<bool>(
+			Core::kQxGhostModeKey,
+			!QxGhost::Enabled());
+		Core::App().saveSettingsDelayed();
+		refreshGhostIcon();
+	});
 
 	_inner->updated(
 	) | rpl::on_next([=] {
@@ -1517,6 +1538,7 @@ void Widget::setupMainMenuToggle() {
 		const auto filtersHidden = !controller()->filtersWidth();
 		_mainMenu.toggle->setVisible(filtersHidden);
 		_mainMenu.under->setVisible(filtersHidden);
+		_qxGhost->setVisible(filtersHidden);
 		_searchForNarrowLayout->setVisible(!filtersHidden);
 		updateControlsGeometry();
 	}, lifetime());
@@ -4472,6 +4494,7 @@ void Widget::updateControlsGeometry() {
 	}
 
 	auto filterTop = (filterAreaHeight - _search->height()) / 2;
+	filterLeft += _qxGhost->width();
 	filterLeft = anim::interpolate(filterLeft, _narrowWidth, narrowRatio);
 	_search->setGeometryToLeft(
 		filterLeft,
@@ -4484,6 +4507,9 @@ void Widget::updateControlsGeometry() {
 		(_narrowWidth - _mainMenu.toggle->width()) / 2,
 		narrowRatio);
 	_mainMenu.toggle->moveToLeft(mainMenuLeft, st::dialogsFilterPadding.y());
+	_qxGhost->moveToLeft(
+		mainMenuLeft + _mainMenu.toggle->width(),
+		_mainMenu.toggle->y());
 	_mainMenu.under->setGeometry(
 		0,
 		0,

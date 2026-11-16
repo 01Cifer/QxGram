@@ -31,6 +31,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "history/history_item.h"
 #include "history/history_item_components.h"
 #include "history/history_item_helpers.h"
+#include "history/history_qx_deleted.h"
 #include "history/view/history_view_element.h"
 #include "iv/iv_rich_page.h"
 #include "core/application.h"
@@ -40,6 +41,7 @@ namespace Data {
 namespace {
 
 constexpr auto kReadRequestTimeout = 3 * crl::time(1000);
+constexpr auto kQxGhostReadRetry = 3 * crl::time(1000);
 constexpr auto kReportDeliveriesPerRequest = 50;
 
 } // namespace
@@ -733,6 +735,10 @@ void Histories::sendReadRequests() {
 			DEBUG_LOG(("Reading: sending with till %1."
 				).arg(state.willReadTill.bare));
 			sendReadRequest(history, state);
+			if (state.willReadWhen > now
+				&& (!next || *next > state.willReadWhen)) {
+				next = state.willReadWhen;
+			}
 		} else if (!next || *next > state.willReadWhen) {
 			DEBUG_LOG(("Reading: scheduling for later send."));
 			next = state.willReadWhen;
@@ -747,6 +753,11 @@ void Histories::sendReadRequests() {
 
 void Histories::sendReadRequest(not_null<History*> history, State &state) {
 	Expects(state.willReadTill > state.sentReadTill);
+
+	if (QxGhost::Enabled()) {
+		state.willReadWhen = crl::now() + kQxGhostReadRetry;
+		return;
+	}
 
 	const auto tillId = state.sentReadTill = base::take(state.willReadTill);
 	state.willReadWhen = 0;

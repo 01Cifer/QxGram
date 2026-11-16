@@ -311,6 +311,17 @@ dialogsSearchFrom: IconButton(dialogsCalendar) {
 	iconOver: icon {{ "dialogs/dialogs_search_from", dialogsMenuIconFgOver }};
 }
 
+qxGhostIconOff: icon {{ "chat/qx_ghost", dialogsMenuIconFg }};
+qxGhostIconOffOver: icon {{ "chat/qx_ghost", dialogsMenuIconFgOver }};
+qxGhostIconOn: icon {{ "chat/qx_ghost", windowActiveTextFg }};
+qxGhostIconOnOver: icon {{ "chat/qx_ghost", windowActiveTextFg }};
+dialogsQxGhost: IconButton(dialogsCalendar) {
+	width: 32px;
+	icon: qxGhostIconOff;
+	iconOver: qxGhostIconOffOver;
+	iconPosition: point(6px, 8px);
+}
+
 dialogsFilter: InputField(defaultInputField) {
 	textBg: filterInputInactiveBg;
 	textBgActive: filterInputActiveBg;

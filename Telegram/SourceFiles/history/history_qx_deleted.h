@@ -34,3 +34,9 @@ namespace QxTtl {
 [[nodiscard]] bool Enabled();
 
 } // namespace QxTtl
+
+namespace QxGhost {
+
+[[nodiscard]] bool Enabled();
+
+} // namespace QxGhost
