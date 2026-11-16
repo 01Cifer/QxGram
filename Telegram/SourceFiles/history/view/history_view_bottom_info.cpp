@@ -18,6 +18,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "core/ui_integration.h"
 #include "history/history_qx_deleted.h"
 #include "lang/lang_keys.h"
+#include "lang/lang_instance.h"
 #include "history/history_item_components.h"
 #include "history/history_item_helpers.h"
 #include "history/history_item.h"
@@ -552,7 +553,10 @@ void BottomInfo::layoutDateText() {
 	marked.append(full);
 	if (_data.flags & Data::Flag::QxDeleted) {
 		marked.append(u" "_q).append(
-			Ui::Text::IconEmoji(&st::qxDeletedIconEmoji));
+			Ui::Text::IconEmoji(&st::qxDeletedIconEmoji)
+		).append(Lang::GetInstance().id().startsWith(u"ru")
+			? u" Удалено"_q
+			: u" Deleted"_q);
 	}
 	if (_data.qxTtl) {
 		marked.append(u" \U0001F525TTL"_q);

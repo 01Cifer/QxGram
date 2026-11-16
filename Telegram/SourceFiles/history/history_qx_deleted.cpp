@@ -40,7 +40,7 @@ std::vector<not_null<HistoryItem*>> FilterToDestroy(
 	auto destroy = std::vector<not_null<HistoryItem*>>();
 	for (const auto &item : items) {
 		if (Set().emplace(item.get()).second) {
-			item->history()->session().data().requestItemResize(item);
+			item->history()->session().data().notifyItemDataChange(item);
 		}
 	}
 	return destroy;
