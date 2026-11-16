@@ -1697,6 +1697,11 @@ void Updater::handleReady() {
 		cSetLastUpdateCheck(base::unixtime::now());
 		Local::writeSettings();
 	}
+#ifdef Q_OS_WIN
+	if (IsAppLaunched() && !Quitting() && checkReadyUpdate()) {
+		Core::Restart();
+	}
+#endif // Q_OS_WIN
 }
 
 void Updater::handleFailed() {
@@ -1765,7 +1770,11 @@ void Updater::start(bool forceWait) {
 	}
 
 	_timer.cancel();
+#ifdef Q_OS_WIN
+	if (_action != Action::Waiting) {
+#else // Q_OS_WIN
 	if (!cAutoUpdate() || _action != Action::Waiting) {
+#endif // Q_OS_WIN
 		return;
 	}
 

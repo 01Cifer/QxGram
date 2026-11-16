@@ -1148,11 +1148,18 @@ void BuildUpdateSection(SectionBuilder &builder, bool atTop) {
 		.id = u"advanced/auto_update"_q,
 		.title = tr::lng_settings_update_automatically(),
 		.st = &st::settingsUpdateToggle,
+#ifdef Q_OS_WIN
+		.toggled = rpl::single(true),
+#else // Q_OS_WIN
 		.toggled = rpl::single(cAutoUpdate()),
+#endif // Q_OS_WIN
 		.keywords = { u"update"_q, u"automatic"_q, u"version"_q },
 	});
 
 	if (toggle) {
+#ifdef Q_OS_WIN
+		toggle->setEnabled(false);
+#endif // Q_OS_WIN
 		const auto label = Ui::CreateChild<Ui::FlatLabel>(
 			toggle,
 			texts->events(),
@@ -1498,7 +1505,12 @@ void SetupUpdate(not_null<Ui::VerticalLayout*> container) {
 	}, label->lifetime());
 	label->setAttribute(Qt::WA_TransparentForMouseEvents);
 
+#ifdef Q_OS_WIN
+	toggle->toggleOn(rpl::single(true));
+	toggle->setEnabled(false);
+#else // Q_OS_WIN
 	toggle->toggleOn(rpl::single(cAutoUpdate()));
+#endif // Q_OS_WIN
 	toggle->toggledValue(
 	) | rpl::filter([](bool toggled) {
 		return (toggled != cAutoUpdate());
