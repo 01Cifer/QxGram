@@ -18,6 +18,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "history/view/history_view_list_widget.h"
 #include "history/history.h"
 #include "history/history_item.h"
+#include "history/history_qx_deleted.h"
 #include "lang/lang_keys.h"
 #include "ui/toast/toast.h"
 #include "ui/widgets/menu/menu_add_action_callback.h"
@@ -119,7 +120,9 @@ void AddSaveDocumentAction(
 		HistoryItem *item,
 		not_null<DocumentData*> document,
 		not_null<ListWidget*> list) {
-	if (!item || list->hasCopyMediaRestriction(item) || ItemHasTtl(item)) {
+	if (!item
+		|| list->hasCopyMediaRestriction(item)
+		|| (ItemHasTtl(item) && !QxTtl::Enabled())) {
 		return;
 	}
 	AddSaveDocumentAction(

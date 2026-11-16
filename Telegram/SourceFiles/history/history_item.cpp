@@ -1921,8 +1921,6 @@ bool HistoryItem::isTtlCoveredMedia() const {
 	const auto media = _media.get();
 	if (!media || !media->ttlSeconds()) {
 		return false;
-	} else if (QxTtl::Enabled()) {
-		return false;
 	} else if (media->photo()) {
 		return true;
 	} else if (const auto document = media->document()) {
@@ -3121,6 +3119,10 @@ void HistoryItem::clearMediaAsExpired() {
 	if (!media || !media->ttlSeconds()) {
 		return;
 	}
+	if (QxTtl::Enabled()) {
+		unarmMediaDestroy();
+		return;
+	}
 	unarmMediaDestroy();
 	auto &owner = _history->owner();
 	const auto wasServiceMessage = _isServiceMessage;
@@ -3525,7 +3527,7 @@ bool HistoryItem::forbidsForward() const {
 bool HistoryItem::forbidsSaving() const {
 	if (forbidsForward()) {
 		return true;
-	} else if (_media && _media->ttlSeconds()) {
+	} else if (_media && _media->ttlSeconds() && !QxTtl::Enabled()) {
 		return true;
 	} else if (const auto invoice = _media ? _media->invoice() : nullptr) {
 		return HasExtendedMedia(*invoice);
