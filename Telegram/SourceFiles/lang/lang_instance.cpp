@@ -28,6 +28,12 @@ constexpr auto kCloudLangPackName = "tdesktop"_cs;
 constexpr auto kCustomLanguage = "#custom"_cs;
 constexpr auto kLangValuesLimit = 20000;
 
+QByteArray RebrandValue(QByteArray value) {
+	value.replace("Telegram Desktop", "QxGram");
+	value.replace("Telegram", "QxGram");
+	return value;
+}
+
 std::vector<QString> PrepareDefaultValues() {
 	auto result = std::vector<QString>();
 	result.reserve(kKeysCount);
@@ -730,8 +736,9 @@ QString Instance::getNonDefaultValue(const QByteArray &key) const {
 }
 
 void Instance::applyValue(const QByteArray &key, const QByteArray &value) {
-	_nonDefaultValues[key] = value;
-	ParseKeyValue(key, value, [&](ushort key, QString &&value) {
+	const auto branded = RebrandValue(value);
+	_nonDefaultValues[key] = branded;
+	ParseKeyValue(key, branded, [&](ushort key, QString &&value) {
 		_nonDefaultSet[key] = 1;
 		if (!_derived) {
 			_values[key] = std::move(value);
