@@ -945,6 +945,10 @@ OverlayWidget::OverlayWidget()
 			_window,
 			_screenshotProtected);
 	}, lifetime());
+	Core::App().screenshotProtection().changes(
+	) | rpl::on_next([=] {
+		refreshScreenshotProtection();
+	}, lifetime());
 
 	_window->screenValue(
 	) | rpl::skip(1) | rpl::on_next([=](not_null<QScreen*> screen) {
@@ -6153,7 +6157,8 @@ bool OverlayWidget::contentNeedsScreenshotProtection() const {
 }
 
 void OverlayWidget::refreshScreenshotProtection() {
-	_screenshotProtected = contentNeedsScreenshotProtection();
+	_screenshotProtected = contentNeedsScreenshotProtection()
+		&& !Core::App().screenshotProtection().allowed();
 	Platform::SetWindowScreenshotProtection(
 		_window,
 		_screenshotProtected);

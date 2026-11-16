@@ -27,6 +27,14 @@ ScreenshotProtection::ScreenshotProtection() = default;
 
 ScreenshotProtection::~ScreenshotProtection() = default;
 
+bool ScreenshotProtection::allowed() const {
+	return QxAllowed();
+}
+
+rpl::producer<> ScreenshotProtection::changes() const {
+	return _changes.events();
+}
+
 void ScreenshotProtection::addContentReason(
 		not_null<QWidget*> window,
 		rpl::producer<bool> active,
@@ -116,6 +124,7 @@ void ScreenshotProtection::refresh() {
 	for (const auto &[widget, enabled] : windows) {
 		apply(widget);
 	}
+	_changes.fire({});
 }
 
 } // namespace Core

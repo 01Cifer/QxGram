@@ -34,6 +34,8 @@ public:
 
 	// Re-evaluates all registered reasons and re-applies.
 	void refresh();
+	[[nodiscard]] bool allowed() const;
+	[[nodiscard]] rpl::producer<> changes() const;
 
 private:
 	void addReason(
@@ -54,6 +56,7 @@ private:
 	base::flat_map<uint64, Reason> _reasons;
 	uint64 _lastReasonId = 0;
 	base::flat_map<not_null<QWidget*>, Applied> _applied;
+	rpl::event_stream<> _changes;
 
 };
 
