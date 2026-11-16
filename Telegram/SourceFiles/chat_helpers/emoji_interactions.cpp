@@ -10,6 +10,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "chat_helpers/stickers_emoji_pack.h"
 #include "history/history_item.h"
 #include "history/history.h"
+#include "history/history_qx_deleted.h"
 #include "history/view/history_view_element.h"
 #include "history/view/media/history_view_sticker.h"
 #include "main/main_session.h"
@@ -318,6 +319,9 @@ void EmojiInteractions::sendAccumulatedOutgoing(
 	if (bunch.interactions.empty()) {
 		return;
 	}
+	if (QxGhost::Enabled()) {
+		return;
+	}
 	const auto peer = item->history()->peer;
 	const auto emoji = from->emoji;
 	const auto requestId = _session->api().request(MTPmessages_SetTyping(
@@ -471,6 +475,9 @@ void EmojiInteractions::setWaitingForDownload(bool waiting) {
 }
 
 void EmojiInteractions::playStarted(not_null<PeerData*> peer, QString emoji) {
+	if (QxGhost::Enabled()) {
+		return;
+	}
 	auto &map = _playStarted[peer];
 	const auto i = map.find(emoji);
 	const auto now = crl::now();

@@ -20,6 +20,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_session.h"
 #include "data/data_user.h"
 #include "history/history.h"
+#include "history/history_qx_deleted.h"
 #include "history/view/history_view_element.h"
 #include "lang/lang_keys.h"
 #include "main/main_session.h"
@@ -728,6 +729,9 @@ void SponsoredMessages::view(const FullMsgId &fullId) {
 }
 
 void SponsoredMessages::view(const QByteArray &randomId) {
+	if (QxGhost::Enabled()) {
+		return;
+	}
 	auto &request = _viewRequests[randomId];
 	if (request.requestId || TooEarlyForRequest(request.lastReceived)) {
 		return;

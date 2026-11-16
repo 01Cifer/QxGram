@@ -29,6 +29,17 @@ constexpr auto kSendTypingsToOfflineFor = TimeId(30);
 SendProgressManager::SendProgressManager(not_null<Main::Session*> session)
 : _session(session)
 , _stopTypingTimer([=] { cancelTyping(base::take(_stopTypingHistory)); }) {
+	QxGhost::Value() | rpl::on_next([=](bool enabled) {
+		if (enabled) {
+			for (const auto &[key, request] : _requests) {
+				_session->api().request(request).cancel();
+			}
+			_requests.clear();
+			_updated.clear();
+			_stopTypingTimer.cancel();
+			_stopTypingHistory = nullptr;
+		}
+	}, _qxGhostLifetime);
 }
 
 void SendProgressManager::cancel(
@@ -65,6 +76,9 @@ void SendProgressManager::update(
 		MsgId topMsgId,
 		SendProgressType type,
 		int progress) {
+	if (QxGhost::Enabled()) {
+		return;
+	}
 	const auto peer = history->peer;
 	if (peer->isSelf()
 		|| (peer->isChannel()

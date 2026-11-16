@@ -10,6 +10,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "history/history.h"
 #include "history/history_item.h"
 #include "history/history_item_helpers.h"
+#include "history/history_qx_deleted.h"
 #include "main/main_session.h"
 #include "data/data_histories.h"
 #include "data/data_session.h"
@@ -970,6 +971,10 @@ void RepliesList::sendReadTillRequest() {
 	}
 	const auto api = &_history->session().api();
 	api->request(base::take(_readRequestId)).cancel();
+	if (QxGhost::Enabled()) {
+		_readRequestTimer.callOnce(crl::time(3000));
+		return;
+	}
 
 	_readRequestId = api->request(MTPmessages_ReadDiscussion(
 		_history->peer->input(),

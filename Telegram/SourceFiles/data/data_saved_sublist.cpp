@@ -23,6 +23,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "history/view/history_view_item_preview.h"
 #include "history/history.h"
 #include "history/history_item.h"
+#include "history/history_qx_deleted.h"
 #include "history/history_unread_things.h"
 #include "main/main_session.h"
 #include "window/notifications_manager.h"
@@ -655,6 +656,10 @@ void SavedSublist::sendReadTillRequest() {
 	}
 	const auto api = &_parent->session().api();
 	api->request(base::take(_readRequestId)).cancel();
+	if (QxGhost::Enabled()) {
+		_readRequestTimer.callOnce(crl::time(3000));
+		return;
+	}
 
 	_sentReadTill = computeInboxReadTillFull();
 	_readRequestId = api->request(MTPmessages_ReadSavedHistory(

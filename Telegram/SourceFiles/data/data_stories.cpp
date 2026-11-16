@@ -21,6 +21,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_session.h"
 #include "history/history.h"
 #include "history/history_item.h"
+#include "history/history_qx_deleted.h"
 #include "lang/lang_keys.h"
 #include "main/main_app_config.h"
 #include "main/main_session.h"
@@ -1419,6 +1420,10 @@ void Stories::checkQuitPreventFinished() {
 
 void Stories::sendMarkAsReadRequests() {
 	_markReadTimer.cancel();
+	if (QxGhost::Enabled()) {
+		_markReadPending.clear();
+		return;
+	}
 	for (auto i = begin(_markReadPending); i != end(_markReadPending);) {
 		const auto peerId = *i;
 		if (_markReadRequests.contains(peerId)) {
@@ -1434,6 +1439,10 @@ void Stories::sendMarkAsReadRequests() {
 }
 
 void Stories::sendIncrementViewsRequests() {
+	if (QxGhost::Enabled()) {
+		_incrementViewsPending.clear();
+		return;
+	}
 	if (_incrementViewsPending.empty()) {
 		return;
 	}

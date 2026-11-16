@@ -679,6 +679,10 @@ void Histories::reportDelivery(not_null<HistoryItem*> item) {
 }
 
 void Histories::reportPendingDeliveries() {
+	if (QxGhost::Enabled()) {
+		_pendingDeliveryReport.clear();
+		return;
+	}
 	auto &pending = _pendingDeliveryReport;
 	for (auto i = begin(pending); i != end(pending);) {
 		auto &[peer, ids] = *i;

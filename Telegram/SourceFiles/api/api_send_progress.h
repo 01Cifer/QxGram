@@ -99,6 +99,7 @@ private:
 	base::flat_map<Key, crl::time> _updated;
 	base::Timer _stopTypingTimer;
 	History *_stopTypingHistory = nullptr;
+	rpl::lifetime _qxGhostLifetime;
 
 };
 

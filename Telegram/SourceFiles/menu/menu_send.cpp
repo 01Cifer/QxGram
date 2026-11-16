@@ -26,6 +26,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "history/view/history_view_schedule_box.h"
 #include "history/history.h"
 #include "history/history_item.h"
+#include "history/history_qx_deleted.h"
 #include "history/history_unread_things.h"
 #include "lang/lang_keys.h"
 #include "lottie/lottie_single_player.h"
@@ -972,7 +973,7 @@ void SetupUnreadMentionsMenu(
 			Fn<void()> done,
 			auto resend) -> void {
 		const auto thread = weakThread.get();
-		if (!thread) {
+		if (!thread || QxGhost::Enabled()) {
 			done();
 			return;
 		}
@@ -1013,7 +1014,7 @@ void SetupUnreadReactionsMenu(
 			Fn<void()> done,
 			auto resend) -> void {
 		const auto thread = weakThread.get();
-		if (!thread) {
+		if (!thread || QxGhost::Enabled()) {
 			done();
 			return;
 		}
@@ -1059,7 +1060,7 @@ void SetupUnreadPollVotesMenu(
 			Fn<void()> done,
 			auto resend) -> void {
 		const auto thread = weakThread.get();
-		if (!thread) {
+		if (!thread || QxGhost::Enabled()) {
 			done();
 			return;
 		}

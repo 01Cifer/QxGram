@@ -258,6 +258,11 @@ Updates::Updates(not_null<Main::Session*> session)
 			updateOnline();
 		}
 	}, _lifetime);
+	if (QxGhost::Enabled()) {
+		_onlineRequest = api().request(MTPaccount_UpdateStatus(
+			MTP_bool(true)
+		)).send();
+	}
 
 	session->account().mtpUpdates(
 	) | rpl::on_next([=](const MTPUpdates &updates) {
@@ -1034,6 +1039,12 @@ void Updates::updateOnline(crl::time lastNonIdleTime, bool gotOtherOffline) {
 		}
 	}
 	auto ms = crl::now();
+	if (QxGhost::Enabled()) {
+		_lastWasOnline = false;
+		_lastSetOnline = ms;
+		_onlineTimer.callOnce(updateIn);
+		return;
+	}
 	if (isOnline != _lastWasOnline
 		|| (isOnline && _lastSetOnline + config.onlineUpdatePeriod <= ms)
 		|| (isOnline && gotOtherOffline)) {
@@ -1041,9 +1052,7 @@ void Updates::updateOnline(crl::time lastNonIdleTime, bool gotOtherOffline) {
 
 		_lastWasOnline = isOnline;
 		_lastSetOnline = ms;
-		if (QxGhost::Enabled()) {
-			// Server never learns it, heals on the next periodic update.
-		} else if (!Core::Quitting()) {
+		if (!Core::Quitting()) {
 			_onlineRequest = api().request(MTPaccount_UpdateStatus(
 				MTP_bool(!isOnline)
 			)).send();
