@@ -38,5 +38,7 @@ namespace QxTtl {
 namespace QxGhost {
 
 [[nodiscard]] bool Enabled();
+[[nodiscard]] rpl::producer<bool> Value();
+void SetEnabled(bool enabled);
 
 } // namespace QxGhost

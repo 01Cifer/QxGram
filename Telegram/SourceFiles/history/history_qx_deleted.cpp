@@ -81,11 +81,31 @@ bool Enabled() {
 } // namespace QxTtl
 
 namespace QxGhost {
+namespace {
+
+rpl::variable<bool> &State() {
+	static auto result = rpl::variable<bool>(
+		Core::App().settings().readPref<bool>(Core::kQxGhostModeKey, false));
+	return result;
+}
+
+} // namespace
 
 bool Enabled() {
-	return Core::App().settings().readPref<bool>(
-		Core::kQxGhostModeKey,
-		false);
+	return State().current();
+}
+
+rpl::producer<bool> Value() {
+	return State().value();
+}
+
+void SetEnabled(bool enabled) {
+	if (Enabled() == enabled) {
+		return;
+	}
+	Core::App().settings().writePref<bool>(Core::kQxGhostModeKey, enabled);
+	Core::App().saveSettingsDelayed();
+	State() = enabled;
 }
 
 } // namespace QxGhost

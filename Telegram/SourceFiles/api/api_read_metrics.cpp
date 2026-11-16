@@ -9,6 +9,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 #include "apiwrap.h"
 #include "data/data_peer.h"
+#include "history/history_qx_deleted.h"
 
 namespace Api {
 namespace {
@@ -32,6 +33,10 @@ void ReadMetrics::add(
 }
 
 void ReadMetrics::send() {
+	if (QxGhost::Enabled()) {
+		_pending.clear();
+		return;
+	}
 	for (auto i = _pending.begin(); i != _pending.end();) {
 		if (_requests.contains(i->first)) {
 			++i;

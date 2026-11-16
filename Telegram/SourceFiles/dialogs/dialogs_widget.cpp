@@ -299,13 +299,11 @@ Widget::Widget(
 			_qxGhost->setIconOverride(nullptr);
 		}
 	};
-	refreshGhostIcon();
-	_qxGhost->setClickedCallback([=] {
-		Core::App().settings().writePref<bool>(
-			Core::kQxGhostModeKey,
-			!QxGhost::Enabled());
-		Core::App().saveSettingsDelayed();
+	QxGhost::Value() | rpl::on_next([=](bool) {
 		refreshGhostIcon();
+	}, lifetime());
+	_qxGhost->setClickedCallback([=] {
+		QxGhost::SetEnabled(!QxGhost::Enabled());
 	});
 
 	_inner->updated(
@@ -1538,7 +1536,7 @@ void Widget::setupMainMenuToggle() {
 		const auto filtersHidden = !controller()->filtersWidth();
 		_mainMenu.toggle->setVisible(filtersHidden);
 		_mainMenu.under->setVisible(filtersHidden);
-		_qxGhost->setVisible(filtersHidden);
+		_qxGhost->show();
 		_searchForNarrowLayout->setVisible(!filtersHidden);
 		updateControlsGeometry();
 	}, lifetime());
@@ -4483,7 +4481,8 @@ void Widget::updateControlsGeometry() {
 		+ st::dialogsFilterPadding.x();
 	const auto filterWidth = std::max(ratiow, smallw)
 		- filterLeft
-		- filterRight;
+		- filterRight
+		- _qxGhost->width();
 	const auto filterAreaHeight = st::topBarHeight;
 	_searchControls->setGeometry(0, filterAreaTop, ratiow, filterAreaHeight);
 	if (_subsectionTopBar) {
@@ -4508,8 +4507,9 @@ void Widget::updateControlsGeometry() {
 		narrowRatio);
 	_mainMenu.toggle->moveToLeft(mainMenuLeft, st::dialogsFilterPadding.y());
 	_qxGhost->moveToLeft(
-		mainMenuLeft + _mainMenu.toggle->width(),
+		filterLeft - _qxGhost->width(),
 		_mainMenu.toggle->y());
+	_qxGhost->raise();
 	_mainMenu.under->setGeometry(
 		0,
 		0,

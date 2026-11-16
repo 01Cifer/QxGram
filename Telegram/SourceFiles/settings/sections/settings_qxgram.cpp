@@ -44,13 +44,19 @@ void AddToggle(SectionBuilder &builder, ToggleArgs &&args) {
 	const auto button = builder.addButton({
 		.id = args.id,
 		.title = std::move(args.title),
-		.toggled = rpl::single(value),
+		.toggled = (key == Core::kQxGhostModeKey)
+			? QxGhost::Value()
+			: rpl::single(value),
 		.keywords = std::move(args.keywords),
 	});
 	button->toggledChanges(
 	) | rpl::on_next([=](bool toggled) {
-		Core::App().settings().writePref<bool>(key, toggled);
-		Core::App().saveSettingsDelayed();
+		if (key == Core::kQxGhostModeKey) {
+			QxGhost::SetEnabled(toggled);
+		} else {
+			Core::App().settings().writePref<bool>(key, toggled);
+			Core::App().saveSettingsDelayed();
+		}
 		if (extra) {
 			extra(toggled);
 		}

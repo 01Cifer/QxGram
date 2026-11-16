@@ -246,6 +246,19 @@ Updates::Updates(not_null<Main::Session*> session)
 , _idleFinishTimer([=] { checkIdleFinish(); }) {
 	_ptsWaiter.setRequesting(true);
 
+	QxGhost::Value() | rpl::skip(1) | rpl::on_next([=](bool enabled) {
+		api().request(base::take(_onlineRequest)).cancel();
+		if (enabled) {
+			_onlineRequest = api().request(MTPaccount_UpdateStatus(
+				MTP_bool(true)
+			)).send();
+		} else {
+			_lastWasOnline = false;
+			_lastSetOnline = 0;
+			updateOnline();
+		}
+	}, _lifetime);
+
 	session->account().mtpUpdates(
 	) | rpl::on_next([=](const MTPUpdates &updates) {
 		mtpUpdateReceived(updates);

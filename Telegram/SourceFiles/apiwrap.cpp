@@ -81,6 +81,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "history/history.h"
 #include "history/history_item_components.h"
 #include "history/history_item_helpers.h"
+#include "history/history_qx_deleted.h"
 #include "history/view/controls/history_view_forward_panel.h"
 #include "iv/editor/iv_editor_session.h"
 #include "iv/iv_rich_message_serializer.h"
@@ -1472,6 +1473,9 @@ void ApiWrap::migrateFail(not_null<PeerData*> peer, const QString &error) {
 
 void ApiWrap::markContentsRead(
 		const base::flat_set<not_null<HistoryItem*>> &items) {
+	if (QxGhost::Enabled()) {
+		return;
+	}
 	auto markedIds = QVector<MTPint>();
 	auto channelMarkedIds = base::flat_map<
 		not_null<ChannelData*>,
@@ -1503,6 +1507,9 @@ void ApiWrap::markContentsRead(
 }
 
 void ApiWrap::markContentsRead(not_null<HistoryItem*> item) {
+	if (QxGhost::Enabled()) {
+		return;
+	}
 	if (!item->markContentsRead(true) || !item->isRegular()) {
 		return;
 	}

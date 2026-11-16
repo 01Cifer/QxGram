@@ -13,6 +13,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_session.h"
 #include "history/history.h"
 #include "history/history_item.h"
+#include "history/history_qx_deleted.h"
 #include "main/main_session.h"
 
 namespace Api {
@@ -83,6 +84,10 @@ void ViewsManager::pollExtendedMedia(
 }
 
 void ViewsManager::viewsIncrement() {
+	if (QxGhost::Enabled()) {
+		_toIncrement.clear();
+		return;
+	}
 	for (auto i = _toIncrement.begin(); i != _toIncrement.cend();) {
 		if (_incrementRequests.contains(i->first)) {
 			++i;
