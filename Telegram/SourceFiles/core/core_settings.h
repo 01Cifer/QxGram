@@ -40,6 +40,11 @@ namespace Core {
 inline constexpr auto kScreenReaderModeDisabledKey
 	= "screen-reader-mode-disabled"_cs;
 
+inline constexpr auto kQxShowDeletedKey = "qxgram-show-deleted"_cs;
+inline constexpr auto kQxShowTtlKey = "qxgram-show-ttl"_cs;
+inline constexpr auto kQxAllowScreenshotKey = "qxgram-allow-screenshot"_cs;
+inline constexpr auto kQxGhostModeKey = "qxgram-ghost-mode"_cs;
+
 struct WindowPosition {
 	int32 moncrc = 0;
 	int maximized = 0;

@@ -49,6 +49,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "settings/settings_builder.h"
 #include "settings/cloud_password/settings_cloud_password_input.h"
 #include "settings/sections/settings_advanced.h"
+#include "settings/sections/settings_qxgram.h"
 #include "settings/sections/settings_business.h"
 #include "settings/sections/settings_calls.h"
 #include "settings/sections/settings_chat.h"
@@ -432,6 +433,15 @@ void BuildSectionButtons(SectionBuilder &builder) {
 			.shown = std::move(shownProducer),
 		});
 	}
+
+	builder.addSectionButton({
+		.title = QxPhrase(
+			u"Настройки QxGram"_q,
+			tr::lng_settings_qxgram(tr::now)),
+		.targetSection = QxGramId(),
+		.icon = { &st::menuIconSettings },
+		.keywords = { u"qxgram"_q, u"features"_q, u"функции"_q },
+	});
 
 	builder.addSectionButton({
 		.title = tr::lng_settings_advanced(),
