@@ -28,3 +28,9 @@ void ReleaseAll();
 void ItemDestroyed(HistoryItem *item);
 
 } // namespace QxDeleted
+
+namespace QxTtl {
+
+[[nodiscard]] bool Enabled();
+
+} // namespace QxTtl

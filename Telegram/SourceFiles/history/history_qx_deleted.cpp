@@ -69,3 +69,13 @@ void ItemDestroyed(HistoryItem *item) {
 }
 
 } // namespace QxDeleted
+
+namespace QxTtl {
+
+bool Enabled() {
+	return Core::App().settings().readPref<bool>(
+		Core::kQxShowTtlKey,
+		false);
+}
+
+} // namespace QxTtl

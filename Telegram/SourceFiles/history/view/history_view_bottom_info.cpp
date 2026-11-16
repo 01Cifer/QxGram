@@ -554,6 +554,9 @@ void BottomInfo::layoutDateText() {
 		marked.append(u" "_q).append(
 			Ui::Text::IconEmoji(&st::qxDeletedIconEmoji));
 	}
+	if (_data.qxTtl) {
+		marked.append(u" \U0001F525TTL"_q);
+	}
 	_authorEditedDate.setMarkedText(
 		st::msgDateTextStyle,
 		marked,
@@ -675,6 +678,11 @@ BottomInfo::Data BottomInfoDataFromMessage(not_null<Message*> message) {
 	auto result = BottomInfo::Data();
 	result.date = message->dateTime();
 	result.effectId = item->effectId();
+	if (QxTtl::Enabled()
+		&& item->media()
+		&& item->media()->ttlSeconds()) {
+		result.qxTtl = true;
+	}
 	if (QxDeleted::Kept(item)) {
 		result.flags |= Flag::QxDeleted;
 	}

@@ -21,6 +21,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "history/view/media/history_view_gif.h"
 #include "history/history.h"
 #include "history/history_item.h"
+#include "history/history_qx_deleted.h"
 #include "iv/iv_instance.h"
 #include "lang/lang_keys.h"
 #include "media/player/media_player_instance.h"
@@ -277,7 +278,8 @@ void ResolveDocument(
 			if (controller
 				&& item
 				&& item->media()
-				&& item->media()->ttlSeconds()) {
+				&& item->media()->ttlSeconds()
+				&& !QxTtl::Enabled()) {
 				ChatHelpers::ShowTTLMediaLayerWidget(controller, item);
 			}
 		} else {

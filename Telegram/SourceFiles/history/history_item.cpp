@@ -1921,6 +1921,8 @@ bool HistoryItem::isTtlCoveredMedia() const {
 	const auto media = _media.get();
 	if (!media || !media->ttlSeconds()) {
 		return false;
+	} else if (QxTtl::Enabled()) {
+		return false;
 	} else if (media->photo()) {
 		return true;
 	} else if (const auto document = media->document()) {
@@ -8477,6 +8479,9 @@ void HistoryItem::unarmMediaDestroy() {
 }
 
 void HistoryItem::applyMediaContentsRead(TimeId readDate) {
+	if (QxTtl::Enabled()) {
+		return;
+	}
 	const auto media = _media.get();
 	const auto ttl = media ? TimeId(media->ttlSeconds()) : TimeId();
 	if (ttl <= 0) {
