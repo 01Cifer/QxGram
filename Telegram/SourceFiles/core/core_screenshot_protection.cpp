@@ -8,9 +8,20 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "core/core_screenshot_protection.h"
 
 #include "base/event_filter.h"
+#include "core/application.h"
+#include "core/core_settings.h"
 #include "platform/platform_specific.h"
 
 namespace Core {
+namespace {
+
+[[nodiscard]] bool QxAllowed() {
+	return Core::App().settings().readPref<bool>(
+		Core::kQxAllowScreenshotKey,
+		false);
+}
+
+} // namespace
 
 ScreenshotProtection::ScreenshotProtection() = default;
 
@@ -58,6 +69,9 @@ void ScreenshotProtection::addReason(
 }
 
 bool ScreenshotProtection::activeFor(not_null<QWidget*> window) const {
+	if (QxAllowed()) {
+		return false;
+	}
 	for (const auto &[id, reason] : _reasons) {
 		if (reason.active && reason.window == window.get()) {
 			return true;
@@ -85,7 +99,7 @@ void ScreenshotProtection::refresh() {
 	for (const auto &[id, reason] : _reasons) {
 		if (const auto window = reason.window.data()) {
 			auto &state = desired[not_null{ window }];
-			state = state || reason.active;
+			state = state || (reason.active && !QxAllowed());
 		}
 	}
 	for (auto i = _applied.begin(); i != _applied.end();) {

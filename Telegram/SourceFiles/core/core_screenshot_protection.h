@@ -32,12 +32,14 @@ public:
 		rpl::producer<bool> active,
 		rpl::lifetime &lifetime);
 
+	// Re-evaluates all registered reasons and re-applies.
+	void refresh();
+
 private:
 	void addReason(
 		not_null<QWidget*> window,
 		rpl::producer<bool> active,
 		rpl::lifetime &lifetime);
-	void refresh();
 	void apply(not_null<QWidget*> window, bool force = false);
 	[[nodiscard]] bool activeFor(not_null<QWidget*> window) const;
 

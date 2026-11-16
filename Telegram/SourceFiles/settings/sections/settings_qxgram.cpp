@@ -92,6 +92,9 @@ void BuildFeatures(SectionBuilder &builder) {
 			u"📷 Allow screenshots"_q),
 		.id = u"qxgram/allow-screenshot"_q,
 		.keywords = { u"screenshot"_q, u"скриншот"_q, u"защита"_q },
+		.onToggleChange = [](bool) {
+			Core::App().screenshotProtection().refresh();
+		},
 	});
 
 	AddToggle(builder, {
