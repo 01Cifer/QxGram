@@ -965,38 +965,35 @@ int main(int argc, char *argv[]) {
 					"tampered QxGram package rejected");
 			}
 			if (verified && argc > 2) {
-				const auto requested = QString::fromLocal8Bit(argv[2]);
-				const auto temporary = requested.contains(
-					QStringLiteral("XXXXXX"));
+				const auto parent = QString::fromLocal8Bit(argv[2]);
 				auto directory = QTemporaryDir(
-					requested + QStringLiteral("/qx-unpack-XXXXXX"));
-				const auto extractTo = temporary
-					? directory.path()
-					: requested;
-				if (!temporary) {
-					QDir().mkpath(extractTo);
-				}
-				Check(
-					temporary ? directory.isValid() : !extractTo.isEmpty(),
-					"isolated extraction directory");
+					QDir(parent).filePath(QStringLiteral("qx-unpack-XXXXXX")));
+				const auto keep = (argc > 3)
+					&& (QByteArray(argv[3]) == QByteArray("--keep"));
+				Check(directory.isValid(), "isolated extraction directory");
 				auto error = QString();
 				const auto uncompressed = DecompressUpdatePayload(
 					*verified,
 					&error);
 				Check(uncompressed.has_value(), "QxGram package decompresses");
-				if ((!temporary || directory.isValid()) && uncompressed) {
+				if (directory.isValid() && uncompressed) {
 					const auto extracted = ExtractUpdateFiles(
 						*uncompressed,
 						verified->envelope.version,
-						extractTo,
+						directory.path(),
 						&error);
 					Check(extracted, "QxGram package extracts");
-					Check(QFileInfo::exists(
-						extractTo + QStringLiteral("/QxGram.exe")),
-						"extracted client exists");
-					Check(QFileInfo::exists(
-						extractTo + QStringLiteral("/Updater.exe")),
-						"extracted updater exists");
+					const auto hasClient = QFileInfo::exists(
+						directory.path() + QStringLiteral("/QxGram.exe"));
+					const auto hasUpdater = QFileInfo::exists(
+						directory.path() + QStringLiteral("/Updater.exe"));
+					Check(hasClient, "extracted client exists");
+					Check(hasUpdater, "extracted updater exists");
+					if (keep && extracted && hasClient && hasUpdater) {
+						directory.setAutoRemove(false);
+						std::cout << "Extracted to: "
+							<< directory.path().toStdString() << std::endl;
+					}
 				}
 			}
 		}
