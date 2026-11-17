@@ -33,11 +33,9 @@ body:
       required: true
   - type: input
     attributes:
-      label: Version of Telegram Desktop
+      label: Version of QxGram
       description: |
-        Write EXACT version number (e.g. 5.1.2).
-        * 🛑 DO NOT WRITE "LATEST". We will instantly close the issue.
-        * 🛑 LINUX REPO VERSIONS ARE NOT SUPPORTED. Go to your distro's tracker (unless you are the distro maintainer).
+        Include the exact QxGram version number (for example, 7.4.6).
     validations:
       required: true
   - type: dropdown
@@ -45,30 +43,21 @@ body:
       label: Installation source
       multiple: false
       options:
-        - Downloaded from desktop.telegram.org or GitHub
-        - Microsoft Store
-        - Mac App Store
-        - Flatpak
-        - Snap
-        - Linux package manager (apt, dnf, pacman, etc)
+        - QxGram GitHub release
+        - Built from source
         - Other source
     validations:
       required: true
   - type: input
     attributes:
-      label: Crash ID
+      label: Crash details
       description: |
-        If the app crashed, we need a Crash ID.
-        1. Go to Settings -> Advanced
-        2. Enable "Install beta versions"
-        3. Reproduce the crash
-        4. Copy the Crash ID on next launch
+        Include any relevant error message, without personal data.
   - type: textarea
     attributes:
       label: Logs
       description: >
-        Type the word `viewlogs`
-        [directly into your settings menu](https://github.com/telegramdesktop/tdesktop/wiki/Cheat-Codes)
-        to open the logs folder.
+        Remove phone numbers, access tokens, and other private data before
+        sharing logs. Never upload your tdata folder.
       placeholder: Insert log.txt here
       render: shell
