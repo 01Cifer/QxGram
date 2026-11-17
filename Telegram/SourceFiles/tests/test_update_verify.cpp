@@ -955,7 +955,7 @@ int main(int argc, char *argv[]) {
 				windows,
 				MakeUpdateVersion(7004003, 0));
 			Check(verified.has_value(), "QxGram package signature accepted");
-			Check(!verifyPackage(data, windows, MakeUpdateVersion(7004004, 0)),
+			Check(verified && !verifyPackage(data, windows, verified->envelope.version),
 				"QxGram package at current version rejected");
 			Check(!verifyPackage(data, kTarget, MakeUpdateVersion(7004003, 0)),
 				"QxGram package for wrong platform rejected");
@@ -965,27 +965,37 @@ int main(int argc, char *argv[]) {
 					"tampered QxGram package rejected");
 			}
 			if (verified && argc > 2) {
-				const auto path = QString::fromLocal8Bit(argv[2])
-					+ QStringLiteral("/qx-unpack-XXXXXX");
-				auto directory = QTemporaryDir(path);
-				Check(directory.isValid(), "isolated extraction directory");
+				const auto requested = QString::fromLocal8Bit(argv[2]);
+				const auto temporary = requested.contains(
+					QStringLiteral("XXXXXX"));
+				auto directory = QTemporaryDir(
+					requested + QStringLiteral("/qx-unpack-XXXXXX"));
+				const auto extractTo = temporary
+					? directory.path()
+					: requested;
+				if (!temporary) {
+					QDir().mkpath(extractTo);
+				}
+				Check(
+					temporary ? directory.isValid() : !extractTo.isEmpty(),
+					"isolated extraction directory");
 				auto error = QString();
 				const auto uncompressed = DecompressUpdatePayload(
 					*verified,
 					&error);
 				Check(uncompressed.has_value(), "QxGram package decompresses");
-				if (directory.isValid() && uncompressed) {
+				if ((!temporary || directory.isValid()) && uncompressed) {
 					const auto extracted = ExtractUpdateFiles(
 						*uncompressed,
 						verified->envelope.version,
-						directory.path(),
+						extractTo,
 						&error);
 					Check(extracted, "QxGram package extracts");
 					Check(QFileInfo::exists(
-						directory.path() + QStringLiteral("/QxGram.exe")),
+						extractTo + QStringLiteral("/QxGram.exe")),
 						"extracted client exists");
 					Check(QFileInfo::exists(
-						directory.path() + QStringLiteral("/Updater.exe")),
+						extractTo + QStringLiteral("/Updater.exe")),
 						"extracted updater exists");
 				}
 			}
