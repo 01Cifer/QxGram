@@ -982,7 +982,7 @@ int main(int argc, char *argv[]) {
 						&error);
 					Check(extracted, "QxGram package extracts");
 					Check(QFileInfo::exists(
-						directory.path() + QStringLiteral("/Telegram.exe")),
+						directory.path() + QStringLiteral("/QxGram.exe")),
 						"extracted client exists");
 					Check(QFileInfo::exists(
 						directory.path() + QStringLiteral("/Updater.exe")),

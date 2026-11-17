@@ -21,7 +21,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 constexpr auto AppId = "{53F49750-6209-4FBF-9CA8-7A333C87D1ED}"_cs;
 constexpr auto AppNameOld = "Telegram Win (Unofficial)"_cs;
 constexpr auto AppName = "QxGram"_cs;
-constexpr auto AppFile = "Telegram"_cs;
+constexpr auto AppFile = "QxGram"_cs;
 constexpr auto AppVersion = 7004004;
 constexpr auto AppVersionStr = "7.4.4";
 constexpr auto AppBetaVersion = false;
