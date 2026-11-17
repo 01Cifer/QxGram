@@ -734,7 +734,12 @@ HttpChecker::HttpChecker(bool testing) : Checker(testing) {
 
 void HttpChecker::start() {
 #ifdef Q_OS_WIN
-	const auto path = u"https://api.github.com/repos/DVoidbreaker/QxGram/releases/latest"_q;
+	auto path = qEnvironmentVariable("QXGRAM_UPDATE_TEST_URL");
+	if (path.isEmpty()) {
+		path = u"https://api.github.com/repos/DVoidbreaker/QxGram/releases/latest"_q;
+	} else {
+		LOG(("Update Info: using test update API: %1").arg(path));
+	}
 #else // Q_OS_WIN
 	const auto updaterVersion = Platform::AutoUpdateVersion();
 	const auto path = Local::readAutoupdatePrefix()
@@ -818,7 +823,13 @@ bool HttpChecker::handleResponse(const QByteArray &response) {
 			continue;
 		}
 		const auto url = QUrl(asset.value(u"browser_download_url"_q).toString());
-		if (url.scheme() != u"https"_q
+		const auto testing = !qEnvironmentVariable(
+			"QXGRAM_UPDATE_TEST_URL").isEmpty();
+		if (testing) {
+			if (url.scheme() != u"http"_q && url.scheme() != u"https"_q) {
+				return false;
+			}
+		} else if (url.scheme() != u"https"_q
 			|| url.host() != u"github.com"_q
 			|| !url.path().startsWith(
 				u"/DVoidbreaker/QxGram/releases/download/"_q)
