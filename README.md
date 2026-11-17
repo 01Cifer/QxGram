@@ -20,7 +20,8 @@ channel:
 * **Windows 64-bit first.** Current releases target Windows 7+ (64 bit);
   macOS and Linux builds are possible from the same source.
 * **Data in the working directory.** Account data lives in a `tdata` folder
-  next to the executable and is preserved across automatic updates.
+  in the working directory, which may differ from the executable directory,
+  and is preserved across automatic updates.
 
 QxGram is an independent community build. It is not an official Telegram
 client, and it is not affiliated with Telegram FZ-LLC.
@@ -38,7 +39,7 @@ Grab the latest release from the
 
 ## Building
 
-See [docs/building-win.md](Telegram/docs/building-win.md) for a full Windows
+See [docs/building-win.md](docs/building-win.md) for a full Windows
 build guide (Visual Studio 2022, `../Libraries` layout). In short:
 
 ```
