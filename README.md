@@ -37,6 +37,10 @@ Grab the latest release from the
   automatically by the built-in updater. You normally never need to download
   it by hand.
 
+Older QxGram builds that use the former GitHub repository cannot discover
+updates here automatically. Back up `tdata` before moving to the new portable
+archive, and keep the same working directory when starting the new client.
+
 ## Building
 
 See [docs/building-win.md](docs/building-win.md) for a full Windows
