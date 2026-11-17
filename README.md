@@ -41,6 +41,10 @@ Older QxGram builds that use the former GitHub repository cannot discover
 updates here automatically. Back up `tdata` before moving to the new portable
 archive, and keep the same working directory when starting the new client.
 
+After adding more than six accounts, do not open the same `tdata` with
+QxGram 7.4.5 or earlier: older versions cannot read that account list and
+may overwrite local data. Back up `tdata` before an upgrade or downgrade.
+
 ## Building
 
 See [docs/building-win.md](docs/building-win.md) for a full Windows
