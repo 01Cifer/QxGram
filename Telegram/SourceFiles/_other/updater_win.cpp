@@ -14,7 +14,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 bool _debug = false;
 
-wstring updaterName, updaterDir, updateTo, exeName, customWorkingDir, customKeyFile;
+wstring updaterName, updaterDir, updateTo, exeName, clientExeName, customWorkingDir, customKeyFile;
 
 bool equal(const wstring &a, const wstring &b) {
 	return !_wcsicmp(a.c_str(), b.c_str());
@@ -235,6 +235,42 @@ void delFolder() {
 	RemoveDirectory(delFolder.c_str());
 }
 
+void DeleteLegacyExecutable() {
+	wstring legacyPath = updateTo + exeName;
+	writeLog(L"Removing legacy executable: '" + legacyPath + L"'");
+	auto deleted = false;
+	for (int tries = 0; tries != 100; ++tries) {
+		if (DeleteFile(legacyPath.c_str())) {
+			deleted = true;
+			break;
+		}
+		const auto errorCode = GetLastError();
+		if (errorCode == ERROR_FILE_NOT_FOUND || errorCode == ERROR_PATH_NOT_FOUND) {
+			deleted = true;
+			break;
+		}
+		Sleep(100);
+	}
+	if (!deleted) {
+		writeLog(L"Error: could not delete legacy executable '" + legacyPath
+			+ L"', error code: " + std::to_wstring(GetLastError()));
+	}
+	auto startupPath = PWSTR(nullptr);
+	if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Startup, 0, nullptr, &startupPath))) {
+		const auto guard = std::unique_ptr<void, decltype(&CoTaskMemFree)>(
+			startupPath,
+			&CoTaskMemFree);
+		wstring legacyLink = wstring(startupPath) + L"\\Telegram.lnk";
+		if (GetFileAttributes(legacyLink.c_str()) != INVALID_FILE_ATTRIBUTES) {
+			if (DeleteFile(legacyLink.c_str())) {
+				writeLog(L"Removed legacy autostart link: '" + legacyLink + L"'");
+			} else {
+				writeLog(L"Error: could not delete legacy autostart link '" + legacyLink + L"'");
+			}
+		}
+	}
+}
+
 DWORD versionNum = 0, versionLen = 0, readLen = 0;
 WCHAR versionStr[32] = { 0 };
 
@@ -317,7 +353,11 @@ bool update() {
 					writeLog(L"Error: bad update, has Updater.exe! '" + tofname + L"' equal '" + updaterName + L"'");
 					delFolder();
 					return false;
-				} else if (equal(tofname, updateTo + L"Telegram.exe") && exeName != L"Telegram.exe") {
+				} else if (equal(tofname, updateTo + L"QxGram.exe") && !equal(exeName, L"QxGram.exe")) {
+					clientExeName = L"QxGram.exe";
+					tofname = updateTo + clientExeName;
+					writeLog(L"Client binary found: '" + tofname + L"', migrating from '" + exeName + L"'");
+				} else if (equal(tofname, updateTo + L"Telegram.exe") && !equal(exeName, L"Telegram.exe")) {
 					wstring fullBinaryPath = updateTo + exeName;
 					writeLog(L"Target binary found: '" + tofname + L"', changing to '" + fullBinaryPath + L"'");
 					tofname = fullBinaryPath;
@@ -375,7 +415,7 @@ bool update() {
 			} while (copyTries < 100);
 			if (!copyResult) {
 				const auto error = FormatUpdateError(
-					L"Failed to update Telegram :(\nCould not copy:\n"
+					L"Failed to update QxGram :(\nCould not copy:\n"
 						+ fname + L"\nTo:\n" + tofname,
 					errorCode);
 				writeLog(error);
@@ -428,16 +468,16 @@ void updateRegistry() {
 								SYSTEMTIME stLocalTime;
 								GetLocalTime(&stLocalTime);
 								RegSetValueEx(rkey, L"DisplayVersion", 0, REG_SZ, (const BYTE*)versionStr, ((versionLen / 2) + 1) * sizeof(WCHAR));
-								wsprintf(nameStr, L"Telegram Desktop");
+								wsprintf(nameStr, L"QxGram");
 								RegSetValueEx(rkey, L"DisplayName", 0, REG_SZ, (const BYTE*)nameStr, (wcslen(nameStr) + 1) * sizeof(WCHAR));
-								wsprintf(publisherStr, L"Telegram FZ-LLC");
+								wsprintf(publisherStr, L"QxGram");
 								RegSetValueEx(rkey, L"Publisher", 0, REG_SZ, (const BYTE*)publisherStr, (wcslen(publisherStr) + 1) * sizeof(WCHAR));
-								wsprintf(icongroupStr, L"Telegram Desktop");
+								wsprintf(icongroupStr, L"QxGram");
 								RegSetValueEx(rkey, L"Inno Setup: Icon Group", 0, REG_SZ, (const BYTE*)icongroupStr, (wcslen(icongroupStr) + 1) * sizeof(WCHAR));
 								wsprintf(dateStr, L"%04d%02d%02d", stLocalTime.wYear, stLocalTime.wMonth, stLocalTime.wDay);
 								RegSetValueEx(rkey, L"InstallDate", 0, REG_SZ, (const BYTE*)dateStr, (wcslen(dateStr) + 1) * sizeof(WCHAR));
 
-								const WCHAR *appURL = L"https://desktop.telegram.org";
+								const WCHAR *appURL = L"https://github.com/DVoidbreaker/QxGram";
 								RegSetValueEx(rkey, L"HelpLink", 0, REG_SZ, (const BYTE*)appURL, (wcslen(appURL) + 1) * sizeof(WCHAR));
 								RegSetValueEx(rkey, L"URLInfoAbout", 0, REG_SZ, (const BYTE*)appURL, (wcslen(appURL) + 1) * sizeof(WCHAR));
 								RegSetValueEx(rkey, L"URLUpdateInfo", 0, REG_SZ, (const BYTE*)appURL, (wcslen(appURL) + 1) * sizeof(WCHAR));
@@ -516,15 +556,16 @@ int APIENTRY wWinMain(HINSTANCE instance, HINSTANCE prevInstance, LPWSTR cmdPara
 				exeName = args[i];
 				for (int j = 0, l = exeName.size(); j < l; ++j) {
 					if (exeName[j] == L'/' || exeName[j] == L'\\') {
-						exeName = L"Telegram.exe";
+						exeName = L"QxGram.exe";
 						break;
 					}
 				}
 			}
 		}
 		if (exeName.empty()) {
-			exeName = L"Telegram.exe";
+			exeName = L"QxGram.exe";
 		}
+		clientExeName = exeName;
 		if (!processArgumentsValid) {
 			writeLog(L"Invalid update process arguments; "
 				L"continuing without process handoff.");
@@ -550,11 +591,14 @@ int APIENTRY wWinMain(HINSTANCE instance, HINSTANCE prevInstance, LPWSTR cmdPara
 						processCreated);
 					if (error != ERROR_SUCCESS) {
 						writeLog(FormatUpdateError(
-							L"Could not finish closing Telegram; continuing with copy retries.",
+							L"Could not finish closing QxGram; continuing with copy retries.",
 							error));
 					}
 				}
 				if (needupdate && update()) {
+					if (clientExeName != exeName) {
+						DeleteLegacyExecutable();
+					}
 					updateRegistry();
 				}
 				if (writeprotected) { // if we can't clear all tupdates\ready (Updater.exe is there) - clear only version
@@ -597,7 +641,7 @@ int APIENTRY wWinMain(HINSTANCE instance, HINSTANCE prevInstance, LPWSTR cmdPara
 			if (SUCCEEDED(hres)) {
 				IPersistFile* ppf;
 
-				wstring exe = updateTo + exeName, dir = updateTo;
+				wstring exe = updateTo + clientExeName, dir = updateTo;
 				psl->SetArguments((targs.size() ? targs.substr(1) : targs).c_str());
 				psl->SetPath(exe.c_str());
 				psl->SetWorkingDirectory(dir.c_str());
@@ -634,16 +678,16 @@ int APIENTRY wWinMain(HINSTANCE instance, HINSTANCE prevInstance, LPWSTR cmdPara
 		}
 	}
 	if (!executed) {
-		ShellExecute(0, 0, (updateTo + exeName).c_str(), (L"-noupdate" + targs).c_str(), 0, SW_SHOWNORMAL);
+		ShellExecute(0, 0, (updateTo + clientExeName).c_str(), (L"-noupdate" + targs).c_str(), 0, SW_SHOWNORMAL);
 	}
 
-	writeLog(L"Executed '" + exeName + L"', closing log and quitting..");
+	writeLog(L"Executed '" + clientExeName + L"', closing log and quitting..");
 	closeLog();
 
 	return 0;
 }
 
-static const WCHAR *_programName = L"Telegram Desktop"; // folder in APPDATA, if current path is unavailable for writing
+static const WCHAR *_programName = L"QxGram"; // folder in APPDATA, if current path is unavailable for writing
 static const WCHAR *_exeName = L"Updater.exe";
 
 LPTOP_LEVEL_EXCEPTION_FILTER _oldWndExceptionFilter = 0;
