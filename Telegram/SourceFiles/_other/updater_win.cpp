@@ -9,6 +9,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 #include "base/platform/win/base_windows_safe_library.h"
 
+#include <array>
 #include <limits>
 #include <memory>
 
@@ -18,6 +19,125 @@ wstring updaterName, updaterDir, updateTo, exeName, clientExeName, customWorking
 
 bool equal(const wstring &a, const wstring &b) {
 	return !_wcsicmp(a.c_str(), b.c_str());
+}
+
+bool SameUpdatePath(const wstring &first, const wstring &second) {
+	if (first.empty() || second.empty()) {
+		return false;
+	}
+	const auto normalize = [](const wstring &path) {
+		auto buffer = std::array<WCHAR, 32768>();
+		const auto length = GetFullPathName(
+			path.c_str(),
+			DWORD(buffer.size()),
+			buffer.data(),
+			nullptr);
+		if (!length || length >= buffer.size()) {
+			return wstring();
+		}
+		auto result = wstring(buffer.data(), length);
+		for (auto &ch : result) {
+			if (ch == L'/') {
+				ch = L'\\';
+			}
+		}
+		while (result.size() > 3 && result.back() == L'\\') {
+			result.pop_back();
+		}
+		return result;
+	};
+	const auto left = normalize(first);
+	const auto right = normalize(second);
+	return !left.empty() && !right.empty() && equal(left, right);
+}
+
+bool MigrateLegacyAutostartLink(
+		const wstring &startupDirectory,
+		const wstring &legacyExecutable,
+		const wstring &newExecutable) {
+	const auto legacyLink = startupDirectory + L"\\Telegram.lnk";
+	const auto newLink = startupDirectory + L"\\QxGram.lnk";
+	if (GetFileAttributes(legacyLink.c_str()) == INVALID_FILE_ATTRIBUTES) {
+		const auto error = GetLastError();
+		return error == ERROR_FILE_NOT_FOUND || error == ERROR_PATH_NOT_FOUND;
+	}
+	const auto initialized = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+	if (FAILED(initialized) && initialized != RPC_E_CHANGED_MODE) {
+		return false;
+	}
+	const auto result = [&] {
+		auto linkPointer = static_cast<IShellLink*>(nullptr);
+		if (FAILED(CoCreateInstance(
+				CLSID_ShellLink,
+				nullptr,
+				CLSCTX_INPROC_SERVER,
+				IID_IShellLink,
+				reinterpret_cast<void**>(&linkPointer)))) {
+			return false;
+		}
+		const auto link = std::unique_ptr<IShellLink, void(*)(IShellLink*)>(
+			linkPointer,
+			[](IShellLink *value) { value->Release(); });
+		auto filePointer = static_cast<IPersistFile*>(nullptr);
+		if (FAILED(link->QueryInterface(
+				IID_IPersistFile,
+				reinterpret_cast<void**>(&filePointer)))) {
+			return false;
+		}
+		const auto file = std::unique_ptr<IPersistFile, void(*)(IPersistFile*)>(
+			filePointer,
+			[](IPersistFile *value) { value->Release(); });
+		if (FAILED(file->Load(legacyLink.c_str(), STGM_READ))) {
+			return false;
+		}
+		auto target = std::array<WCHAR, 32768>();
+		if (FAILED(link->GetPath(
+				target.data(),
+				int(target.size()),
+				nullptr,
+				SLGP_RAWPATH))
+			|| !target[0]) {
+			return false;
+		}
+		auto expanded = std::array<WCHAR, 32768>();
+		const auto expandedLength = ExpandEnvironmentStrings(
+			target.data(),
+			expanded.data(),
+			DWORD(expanded.size()));
+		if (!expandedLength || expandedLength > expanded.size()) {
+			return false;
+		}
+		if (GetFileAttributes(expanded.data()) == INVALID_FILE_ATTRIBUTES) {
+			return false;
+		}
+		if (!SameUpdatePath(expanded.data(), legacyExecutable)) {
+			return true;
+		}
+		if (GetFileAttributes(newLink.c_str()) != INVALID_FILE_ATTRIBUTES
+			|| GetLastError() != ERROR_FILE_NOT_FOUND
+			|| FAILED(link->SetPath(newExecutable.c_str()))) {
+			return false;
+		}
+		auto temporary = std::array<WCHAR, MAX_PATH>();
+		if (!GetTempFileName(
+				startupDirectory.c_str(),
+				L"Qx",
+				0,
+				temporary.data())) {
+			return false;
+		}
+		const auto moved = SUCCEEDED(file->Save(temporary.data(), FALSE))
+			&& MoveFile(temporary.data(), newLink.c_str());
+		if (!moved) {
+			DeleteFile(temporary.data());
+			return false;
+		}
+		return DeleteFile(legacyLink.c_str()) != FALSE;
+	}();
+	if (SUCCEEDED(initialized)) {
+		CoUninitialize();
+	}
+	return result;
 }
 
 wstring FormatUpdateError(const wstring &message, DWORD errorCode) {
@@ -237,6 +357,25 @@ void delFolder() {
 
 void DeleteLegacyExecutable() {
 	wstring legacyPath = updateTo + exeName;
+	auto startupPath = PWSTR(nullptr);
+	if (FAILED(SHGetKnownFolderPath(
+			FOLDERID_Startup,
+			0,
+			nullptr,
+			&startupPath))) {
+		writeLog(L"Could not check the legacy autostart link; keeping old executable.");
+		return;
+	}
+	const auto guard = std::unique_ptr<void, decltype(&CoTaskMemFree)>(
+		startupPath,
+		&CoTaskMemFree);
+	if (!MigrateLegacyAutostartLink(
+			startupPath,
+			legacyPath,
+			updateTo + clientExeName)) {
+		writeLog(L"Could not migrate the legacy autostart link; keeping old executable.");
+		return;
+	}
 	writeLog(L"Removing legacy executable: '" + legacyPath + L"'");
 	auto deleted = false;
 	for (int tries = 0; tries != 100; ++tries) {
@@ -254,20 +393,6 @@ void DeleteLegacyExecutable() {
 	if (!deleted) {
 		writeLog(L"Error: could not delete legacy executable '" + legacyPath
 			+ L"', error code: " + std::to_wstring(GetLastError()));
-	}
-	auto startupPath = PWSTR(nullptr);
-	if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Startup, 0, nullptr, &startupPath))) {
-		const auto guard = std::unique_ptr<void, decltype(&CoTaskMemFree)>(
-			startupPath,
-			&CoTaskMemFree);
-		wstring legacyLink = wstring(startupPath) + L"\\Telegram.lnk";
-		if (GetFileAttributes(legacyLink.c_str()) != INVALID_FILE_ATTRIBUTES) {
-			if (DeleteFile(legacyLink.c_str())) {
-				writeLog(L"Removed legacy autostart link: '" + legacyLink + L"'");
-			} else {
-				writeLog(L"Error: could not delete legacy autostart link '" + legacyLink + L"'");
-			}
-		}
 	}
 }
 
@@ -313,6 +438,7 @@ bool update() {
 	dirs.push_back(updDir);
 
 	deque<wstring> from, to, forcedirs;
+	auto nextClientExeName = exeName;
 
 	do {
 		wstring dir = dirs.front();
@@ -354,8 +480,8 @@ bool update() {
 					delFolder();
 					return false;
 				} else if (equal(tofname, updateTo + L"QxGram.exe") && !equal(exeName, L"QxGram.exe")) {
-					clientExeName = L"QxGram.exe";
-					tofname = updateTo + clientExeName;
+					nextClientExeName = L"QxGram.exe";
+					tofname = updateTo + nextClientExeName;
 					writeLog(L"Client binary found: '" + tofname + L"', migrating from '" + exeName + L"'");
 				} else if (equal(tofname, updateTo + L"Telegram.exe") && !equal(exeName, L"Telegram.exe")) {
 					wstring fullBinaryPath = updateTo + exeName;
@@ -433,6 +559,7 @@ bool update() {
 
 	writeLog(L"Update succeed! Clearing folder..");
 	delFolder();
+	clientExeName = nextClientExeName;
 	return true;
 }
 
@@ -462,8 +589,8 @@ void updateRegistry() {
 					if (PathCanonicalize(exp, locationStr)) {
 						memcpy(locationStr, exp, bufSize * sizeof(WCHAR));
 						if (GetFullPathName(L".", bufSize, exp, 0) < bufSize) {
-							wstring installpath = locationStr, mypath = exp;
-							if (installpath == mypath + L"\\" || true) { // always update reg info, if we found it
+							wstring installpath = locationStr;
+							if (SameUpdatePath(installpath, updateTo)) {
 								WCHAR nameStr[bufSize], dateStr[bufSize], publisherStr[bufSize], icongroupStr[bufSize];
 								SYSTEMTIME stLocalTime;
 								GetLocalTime(&stLocalTime);

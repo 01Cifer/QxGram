@@ -40,6 +40,13 @@ using std::wstring;
 [[nodiscard]] DWORD FinishUpdateProcess(
 	DWORD processId,
 	ULONGLONG creationTime);
+[[nodiscard]] bool SameUpdatePath(
+	const wstring &first,
+	const wstring &second);
+[[nodiscard]] bool MigrateLegacyAutostartLink(
+	const wstring &startupDirectory,
+	const wstring &legacyExecutable,
+	const wstring &newExecutable);
 
 extern LPTOP_LEVEL_EXCEPTION_FILTER _oldWndExceptionFilter;
 LONG CALLBACK _exceptionFilter(EXCEPTION_POINTERS* pExceptionPointers);
