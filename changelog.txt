@@ -1,3 +1,9 @@
+7.4.6 (17.11.26)
+
+- Remove the client-side account limit.
+- Preserve account lists with more than six accounts across restarts.
+- Update repository guidance and remove upstream-only publishing workflows.
+
 7.4.5 (17.11.26)
 
 - The executable is now named QxGram.exe; updating clients are migrated
