@@ -736,7 +736,7 @@ void HttpChecker::start() {
 #ifdef Q_OS_WIN
 	auto path = qEnvironmentVariable("QXGRAM_UPDATE_TEST_URL");
 	if (path.isEmpty()) {
-		path = u"https://api.github.com/repos/DVoidbreaker/QxGram/releases/latest"_q;
+		path = u"https://api.github.com/repos/01Cifer/QxGram/releases/latest"_q;
 	} else {
 		LOG(("Update Info: using test update API: %1").arg(path));
 	}
@@ -832,7 +832,7 @@ bool HttpChecker::handleResponse(const QByteArray &response) {
 		} else if (url.scheme() != u"https"_q
 			|| url.host() != u"github.com"_q
 			|| !url.path().startsWith(
-				u"/DVoidbreaker/QxGram/releases/download/"_q)
+				u"/01Cifer/QxGram/releases/download/"_q)
 			|| !url.path().endsWith(u"/"_q + name)) {
 			return false;
 		}

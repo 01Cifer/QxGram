@@ -5,7 +5,7 @@ on top of the open-source [Telegram Desktop][telegram_desktop] code base and
 the [Telegram API][telegram_api] with the [MTProto][telegram_proto] secure
 protocol.
 
-[![Release](https://img.shields.io/github/v/release/DVoidbreaker/QxGram)](https://github.com/DVoidbreaker/QxGram/releases)
+[![Release](https://img.shields.io/github/v/release/01Cifer/QxGram)](https://github.com/01Cifer/QxGram/releases)
 [![License](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE)
 
 ## About
@@ -28,7 +28,7 @@ client, and it is not affiliated with Telegram FZ-LLC.
 ## Downloads
 
 Grab the latest release from the
-[releases page](https://github.com/DVoidbreaker/QxGram/releases):
+[releases page](https://github.com/01Cifer/QxGram/releases):
 
 * `QxGram-win64-<version>.zip` — portable archive. Unpack anywhere and run
   `QxGram.exe`.
