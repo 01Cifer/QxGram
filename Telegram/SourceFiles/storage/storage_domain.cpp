@@ -9,6 +9,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 #include "core/version.h"
 #include "storage/details/storage_file_utilities.h"
+#include "storage/storage_account_indices.h"
 #include "storage/serialize_common.h"
 #include "mtproto/mtproto_config.h"
 #include "main/main_domain.h"
@@ -625,10 +626,9 @@ Domain::StartModernResult Domain::startModern(
 		return StartModernResult::Failed;
 	}
 	LOG(("App Info: reading encrypted info..."));
-	auto count = qint32();
-	info.stream >> count;
-	if (count <= 0 || count > Main::Domain::kPremiumMaxAccounts) {
-		LOG(("App Error: bad accounts count: %1").arg(count));
+	const auto indices = ReadAccountIndices(info.stream);
+	if (!indices) {
+		LOG(("App Error: bad accounts index data."));
 		return StartModernResult::Failed;
 	}
 
@@ -637,11 +637,9 @@ Domain::StartModernResult Domain::startModern(
 	auto tried = base::flat_set<int>();
 	auto sessions = base::flat_set<uint64>();
 	auto active = 0;
-	for (auto i = 0; i != count; ++i) {
-		auto index = qint32();
-		info.stream >> index;
-		if (index >= 0
-			&& index < Main::Domain::kPremiumMaxAccounts
+	for (auto i = size_t(0); i != indices->size(); ++i) {
+		const auto index = (*indices)[i];
+		if (ValidAccountIndex(index)
 			&& tried.emplace(index).second) {
 			auto account = std::make_unique<Main::Account>(
 				_owner,
@@ -651,7 +649,8 @@ Domain::StartModernResult Domain::startModern(
 			const auto sessionId = account->willHaveSessionUniqueId(
 				config.get());
 			if (!sessions.contains(sessionId)
-				&& (sessionId != 0 || (sessions.empty() && i + 1 == count))) {
+				&& (sessionId != 0
+					|| (sessions.empty() && i + 1 == indices->size()))) {
 				if (sessions.empty()) {
 					active = index;
 				}
@@ -692,13 +691,15 @@ QByteArray Domain::prepareAccountsInfo() const {
 	Expects(_localKey != nullptr);
 
 	const auto &list = _owner->accounts();
-	auto keySize = sizeof(qint32) + sizeof(qint32) * list.size();
+	const auto keySize = sizeof(qint32) * (2 + list.size());
 
 	EncryptedDescriptor info(keySize);
-	info.stream << qint32(list.size());
+	auto indices = std::vector<qint32>();
+	indices.reserve(list.size());
 	for (const auto &[index, account] : list) {
-		info.stream << qint32(index);
+		indices.push_back(qint32(index));
 	}
+	WriteAccountIndices(info.stream, indices);
 	info.stream << qint32(_owner->activeForStorage());
 	return PrepareEncrypted(info, _localKey);
 }

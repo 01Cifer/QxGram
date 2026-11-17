@@ -1111,7 +1111,6 @@ void AccountsList::rebuild() {
 		}
 	}, inner->lifetime());
 
-	const auto premiumLimit = _controller->session().domain().maxAccounts();
 	const auto list = _controller->session().domain().orderedAccounts();
 	for (const auto &account : list) {
 		auto i = _watched.find(account);
@@ -1121,7 +1120,6 @@ void AccountsList::rebuild() {
 		if (!account->sessionExists() || list.size() == 1) {
 			button = nullptr;
 		} else if (!button) {
-			const auto nextIsLocked = (inner->count() >= premiumLimit);
 			auto callback = [=](Qt::KeyboardModifiers modifiers) {
 				if (_reordering) {
 					return;
@@ -1157,19 +1155,15 @@ void AccountsList::rebuild() {
 				_controller,
 				account,
 				std::move(callback),
-				nextIsLocked)));
+				false)));
 		}
 	}
 	inner->resizeToWidth(_outer->width());
 
 	const auto count = int(list.size());
 
-	_reorder->addPinnedInterval(
-		premiumLimit,
-		std::max(1, count - premiumLimit));
-
 	_addAccount->toggle(
-		(count < ::Main::Domain::kPremiumMaxAccounts),
+		(count < _controller->session().domain().maxAccounts()),
 		anim::type::instant);
 
 	_reorder->start();

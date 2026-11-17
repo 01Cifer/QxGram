@@ -716,6 +716,11 @@ void EraseDomainStorage(
 		auto account = Main::Account(domain, dataName, i);
 		EraseStorage(&account);
 	}
+	for (const auto &[index, account] : domain->accounts()) {
+		if (index >= Main::Domain::kPremiumMaxAccounts) {
+			EraseStorage(account.get());
+		}
+	}
 	Storage::details::Sync();
 }
 

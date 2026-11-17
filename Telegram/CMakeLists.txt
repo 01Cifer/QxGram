@@ -71,6 +71,7 @@ if (DESKTOP_APP_TEST_APPS OR TDESKTOP_BUILD_UPDATE_TESTS)
         endif()
     endif()
 endif()
+include(cmake/test_account_indices.cmake)
 include(cmake/test_iv_editor_state.cmake)
 include(cmake/test_iv_editor_table_grid.cmake)
 include(cmake/test_wallet_card_tint.cmake)
@@ -2058,6 +2059,7 @@ PRIVATE
     storage/storage_cloud_blob.h
     storage/storage_domain.cpp
     storage/storage_domain.h
+    storage/storage_account_indices.h
     storage/storage_facade.cpp
     storage/storage_facade.h
     storage/storage_folder_archive.cpp
