@@ -1,3 +1,9 @@
+7.4.5 (17.11.26)
+
+- The executable is now named QxGram.exe; updating clients are migrated
+  to the new name automatically.
+- Bug fixes and other minor improvements.
+
 7.4.4 (13.11.26)
 
 - Bug fixes and other minor improvements.
