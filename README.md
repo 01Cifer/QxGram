@@ -10,7 +10,7 @@ protocol.
 
 ## Install on Windows
 
-Open PowerShell and run:
+Open Windows PowerShell 5.1 or newer and run:
 
 ```powershell
 iwr -useb https://raw.githubusercontent.com/01Cifer/QxGram/main/install.ps1 | iex
