@@ -8,6 +8,25 @@ protocol.
 [![Release](https://img.shields.io/github/v/release/01Cifer/QxGram)](https://github.com/01Cifer/QxGram/releases)
 [![License](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE)
 
+## Install on Windows
+
+Open PowerShell and run:
+
+```powershell
+iwr -useb https://raw.githubusercontent.com/01Cifer/QxGram/main/install.ps1 | iex
+```
+
+The installer downloads the latest Windows x64 release with progress, checks
+its SHA-256 digest against GitHub, and installs it in `%LOCALAPPDATA%\QxGram`.
+It then asks whether to create a desktop shortcut and whether to launch
+QxGram. No administrator privileges are needed.
+
+The installation uses a separate portable data folder at
+`%LOCALAPPDATA%\QxGram\TelegramForcePortable\tdata`. Existing installations
+and account data are not imported or overwritten. If the destination already
+exists, the installer stops without changing it; use that client's built-in
+updater instead. You can [review the installer](install.ps1) before running it.
+
 ## About
 
 QxGram ships the familiar Telegram Desktop experience with its own release
